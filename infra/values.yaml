@@ -1,0 +1,31 @@
+---
+namespaces: ['argocd', 'infra', 'monitoring', 'cert-manager']
+
+applications:
+  - name: argocd
+    namespace: argocd
+    chart: argo-cd
+    targetRevision: 3.33.6
+    repoURL: https://argoproj.github.io/argo-helm
+  - name: cert-manager
+    namespace: cert-manager
+    chart: cert-manager
+    targetRevision: v1.14.2
+    repoURL: https://charts.jetstack.io
+  - name: tomcat
+    namespace: infra
+    chart: tomcat
+    targetRevision: 10.3.9
+    repoURL: https://charts.bitnami.com/bitnami
+  - name: istiod
+    namespace: istio-system
+    chart: istiod
+    targetRevision: 1.20.3
+  - name: gateway
+    namespace: istio-system
+    chart: gateway
+    targetRevision: 1.20.3
+  - name: base
+    namespace: istio-system
+    chart: base
+    targetRevision: 1.20.3

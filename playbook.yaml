@@ -1,0 +1,7 @@
+---
+- name: Set LC_TIME
+  hosts: all
+  become: yes
+  tasks:
+    - name: Set 24h time format
+      ansible.builtin.command: "localectl set-locale LC_TIME='en_GB.UTF-8'"
