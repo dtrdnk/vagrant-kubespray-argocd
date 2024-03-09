@@ -39,11 +39,11 @@ crds:
 global:
   # -- Default domain used by all components
   ## Used for ingresses, certificates, SSO, notifications, etc.
-  domain: argocd.example.com
+  domain: argocd.home.lab
 
   # -- Common labels for the all resources
   additionalLabels: {}
-  # app: argo-cd
+    # app: argo-cd
 
   # -- Number of old deployment ReplicaSets to retain. The rest will be garbage collected.
   revisionHistoryLimit: 3
@@ -365,13 +365,25 @@ configs:
   # Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/
   cmp:
     # -- Create the argocd-cmp-cm configmap
-    create: false
+    create: true
 
     # -- Annotations to be added to argocd-cmp-cm configmap
     annotations: {}
 
     # -- Plugin yaml files to be added to argocd-cmp-cm
-    plugins: {}
+    plugins:
+      argocd-vault-plugin:
+        discover:
+          find:
+            command:
+              - sh
+              - "-c"
+              - "find . -name '*.yaml' | xargs -I {} grep \"<path\\\\|avp\\\\.kubernetes\\\\.io\" {} | grep ."
+        generate:
+          command:
+            - argocd-vault-plugin
+            - generate
+            - "."
       # --- First plugin
       # my-plugin:
       #   init:
@@ -525,7 +537,7 @@ configs:
     ## Note that all values must be non-empty.
     extra:
       {}
-    # LDAP_PASSWORD: "mypassword"
+      # LDAP_PASSWORD: "mypassword"
 
     # -- Bcrypt hashed admin password
     ## Argo expects the password in the secret to be bcrypt hashed. You can create this hash with
@@ -558,7 +570,7 @@ extraObjects:
     spec:
       description: Main Project
       sourceRepos:
-        - https://github.com/dtrdnk/vagrant-rke2-argocd.git
+        - https://github.com/dtrdnk/vagrant-kubespray-argocd.git
         - https://piraeus.io/helm-charts
         - https://victoriametrics.github.io/helm-charts
         - https://prometheus-community.github.io/helm-charts
@@ -605,7 +617,7 @@ extraObjects:
           valueFiles:
             - values.yaml
         path: apps
-        repoURL: https://github.com/dtrdnk/vagrant-rke2-argocd.git
+        repoURL: https://github.com/dtrdnk/vagrant-kubespray-argocd.git
         targetRevision: master
       destination:
         namespace: argocd
@@ -628,7 +640,7 @@ extraObjects:
           valueFiles:
             - values.yaml
         path: infra
-        repoURL: https://github.com/dtrdnk/vagrant-rke2-argocd.git
+        repoURL: https://github.com/dtrdnk/vagrant-kubespray-argocd.git
         targetRevision: master
       destination:
         namespace: argocd
@@ -670,7 +682,21 @@ controller:
 
   # -- The number of application controller pods to run.
   # Additional replicas will cause sharding of managed clusters across number of replicas.
+  ## With dynamic cluster distribution turned on, sharding of the clusters will gracefully
+  ## rebalance if the number of replica's changes or one becomes unhealthy. (alpha)
   replicas: 1
+
+  # -- Enable dynamic cluster distribution (alpha)
+  # Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/dynamic-cluster-distribution
+  ## This is done using a deployment instead of a statefulSet
+  ## When replicas are added or removed, the sharding algorithm is re-run to ensure that the
+  ## clusters are distributed according to the algorithm. If the algorithm is well-balanced,
+  ## like round-robin, then the shards will be well-balanced.
+  dynamicClusterDistribution: false
+
+  # -- Application controller heartbeat time
+  # Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/dynamic-cluster-distribution/#working-of-dynamic-distribution
+  heartbeatTime: 10
 
   # -- Maximum number of controller revisions that will be maintained in StatefulSet history
   revisionHistoryLimit: 5
@@ -755,6 +781,9 @@ controller:
   # -- Annotations for the application controller StatefulSet
   statefulsetAnnotations: {}
 
+  # -- Annotations for the application controller Deployment
+  deploymentAnnotations: {}
+
   # -- Annotations to be added to application controller pods
   podAnnotations: {}
 
@@ -835,7 +864,7 @@ controller:
   topologySpreadConstraints: []
     # - maxSkew: 1
     #   topologyKey: topology.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
+    #   whenUnsatisfiable: DoNotSchedule
 
   serviceAccount:
     # -- Create a service account for the application controller
@@ -884,7 +913,7 @@ controller:
       metricRelabelings: []
       # -- Prometheus ServiceMonitor selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
 
       # -- Prometheus ServiceMonitor scheme
       scheme: ""
@@ -903,7 +932,7 @@ controller:
       namespace: "" # "monitoring"
       # -- PrometheusRule selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
 
       # -- PrometheusRule labels
       additionalLabels: {}
@@ -976,7 +1005,7 @@ dex:
       metricRelabelings: []
       # -- Prometheus ServiceMonitor selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
 
       # -- Prometheus ServiceMonitor scheme
       scheme: ""
@@ -1132,6 +1161,12 @@ dex:
   livenessProbe:
     # -- Enable Kubernetes liveness probe for Dex >= 2.28.0
     enabled: false
+    # -- Http path to use for the liveness probe
+    httpPath: /healthz/live
+    # -- Http port to use for the liveness probe
+    httpPort: metrics
+    # -- Scheme to use for for the liveness probe (can be HTTP or HTTPS)
+    httpScheme: HTTP
     # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
     failureThreshold: 3
     # -- Number of seconds after the container has started before [probe] is initiated
@@ -1146,6 +1181,12 @@ dex:
   readinessProbe:
     # -- Enable Kubernetes readiness probe for Dex >= 2.28.0
     enabled: false
+    # -- Http path to use for the readiness probe
+    httpPath: /healthz/ready
+    # -- Http port to use for the readiness probe
+    httpPort: metrics
+    # -- Scheme to use for for the liveness probe (can be HTTP or HTTPS)
+    httpScheme: HTTP
     # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
     failureThreshold: 3
     # -- Number of seconds after the container has started before [probe] is initiated
@@ -1204,14 +1245,14 @@ dex:
   topologySpreadConstraints: []
     # - maxSkew: 1
     #   topologyKey: topology.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
+    #   whenUnsatisfiable: DoNotSchedule
 
   # -- Deployment strategy to be added to the Dex server Deployment
   deploymentStrategy: {}
     # type: RollingUpdate
     # rollingUpdate:
     #   maxSurge: 25%
-  #   maxUnavailable: 25%
+    #   maxUnavailable: 25%
 
   # -- Dex log format. Either `text` or `json`
   # @default -- `""` (defaults to global.logging.format)
@@ -1317,7 +1358,7 @@ redis:
       #   memory: 64Mi
       # requests:
       #   cpu: 10m
-    #   memory: 32Mi
+      #   memory: 32Mi
 
   # -- Secrets with credentials to pull images from a private registry
   # @default -- `[]` (defaults to global.imagePullSecrets)
@@ -1455,7 +1496,7 @@ redis:
   topologySpreadConstraints: []
     # - maxSkew: 1
     #   topologyKey: topology.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
+    #   whenUnsatisfiable: DoNotSchedule
 
   # -- terminationGracePeriodSeconds for container lifecycle hook
   terminationGracePeriodSeconds: 30
@@ -1506,7 +1547,7 @@ redis:
       metricRelabelings: []
       # -- Prometheus ServiceMonitor selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
 
       # -- Prometheus ServiceMonitor scheme
       scheme: ""
@@ -1905,14 +1946,14 @@ server:
   topologySpreadConstraints: []
     # - maxSkew: 1
     #   topologyKey: topology.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
+    #   whenUnsatisfiable: DoNotSchedule
 
   # -- Deployment strategy to be added to the server Deployment
   deploymentStrategy: {}
     # type: RollingUpdate
     # rollingUpdate:
     #   maxSurge: 25%
-  #   maxUnavailable: 25%
+    #   maxUnavailable: 25%
 
   # TLS certificate configuration via cert-manager
   ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/tls/#tls-certificates-used-by-argocd-server
@@ -2036,7 +2077,7 @@ server:
       metricRelabelings: []
       # -- Prometheus ServiceMonitor selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
 
       # -- Prometheus ServiceMonitor scheme
       scheme: ""
@@ -2074,7 +2115,7 @@ server:
     ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-1-ssl-passthrough
     annotations: {}
       # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-    # nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+      # nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 
     # -- Defines which ingress controller will implement the resource
     ingressClassName: ""
@@ -2098,10 +2139,11 @@ server:
     # @default -- `[]` (See [values.yaml])
     extraHosts: []
       # - name: argocd.example.com
-    #   path: /
+      #   path: /
 
     # -- Additional ingress paths
     # @default -- `[]` (See [values.yaml])
+    ## Note: Supports use of custom Helm templates
     extraPaths: []
       # - path: /*
       #   pathType: Prefix
@@ -2109,34 +2151,37 @@ server:
       #     service:
       #       name: ssl-redirect
       #       port:
-    #         name: use-annotation
+      #         name: use-annotation
 
     # -- Additional ingress rules
     # @default -- `[]` (See [values.yaml])
+    ## Note: Supports use of custom Helm templates
     extraRules: []
-      # - host: example.example.com
-      #   http:
-      #       path: /
+      # - http:
+      #     paths:
+      #     - path: /
+      #       pathType: Prefix
       #       backend:
       #         service:
-      #           name: example-svc
+      #           name: '{{ include "argo-cd.server.fullname" . }}'
       #           port:
-    #             name: http
+      #             name: '{{ .Values.server.service.servicePortHttpsName }}'
 
     # -- Additional TLS configuration
     # @default -- `[]` (See [values.yaml])
     extraTls: []
       # - hosts:
       #   - argocd.example.com
-    #   secretName: your-certificate-name
+      #   secretName: your-certificate-name
 
     # AWS specific options for Application Load Balancer
     # Applies only when `serv.ingress.controller` is set to `aws`
     ## Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#aws-application-load-balancers-albs-and-classic-elb-http-mode
     aws:
       # -- Backend protocol version for the AWS ALB gRPC service
-      ## This tells AWS to send traffic from the ALB using HTTP2. Can use gRPC as well if you want to leverage gRPC specific features
-      backendProtocolVersion: HTTP2
+      ## This tells AWS to send traffic from the ALB using gRPC.
+      ## For more information: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/target-group-health-checks.html#health-check-settings
+      backendProtocolVersion: GRPC
       # -- Service type for the AWS ALB gRPC service
       ## Can be of type NodePort or ClusterIP depending on which mode you are running.
       ## Instance mode needs type NodePort, IP mode needs type ClusterIP
@@ -2154,7 +2199,7 @@ server:
         # iap:
         #  enabled: true
         #  oauthclientCredentials:
-      #    secretName: argocd-secret
+        #    secretName: argocd-secret
 
       # -- Google [FrontendConfig] resource, for use with the GKE Ingress Controller
       # @default -- `{}` (See [values.yaml])
@@ -2162,7 +2207,7 @@ server:
       frontendConfig: {}
         # redirectToHttps:
         #   enabled: true
-      #   responseCodeName: RESPONSE_CODE
+        #   responseCodeName: RESPONSE_CODE
 
       # Managed GKE certificate for ingress hostname
       managedCertificate:
@@ -2171,7 +2216,7 @@ server:
         create: true
         # -- Additional domains for ManagedCertificate resource
         extraDomains: []
-        # - argocd.example.com
+          # - argocd.example.com
 
   # Dedicated gRPC ingress for ingress controllers that supports only single backend protocol per Ingress resource
   # Ref: https://argo-cd.readthedocs.io/en/stable/operator-manual/ingress/#option-2-multiple-ingress-objects-and-hosts
@@ -2203,10 +2248,11 @@ server:
     # @default -- `[]` (See [values.yaml])
     extraHosts: []
       # - name: grpc.argocd.example.com
-    #   path: /
+      #   path: /
 
     # -- Additional ingress paths for dedicated [gRPC-ingress]
     # @default -- `[]` (See [values.yaml])
+    ## Note: Supports use of custom Helm templates
     extraPaths: []
       # - path: /*
       #   pathType: Prefix
@@ -2214,26 +2260,28 @@ server:
       #     service:
       #       name: ssl-redirect
       #       port:
-    #         name: use-annotation
+      #         name: use-annotation
 
     # -- Additional ingress rules
     # @default -- `[]` (See [values.yaml])
+    ## Note: Supports use of custom Helm templates
     extraRules: []
-      # - host: example.example.com
-      #   http:
-      #       path: /
+      # - http:
+      #     paths:
+      #     - path: /
+      #       pathType: Prefix
       #       backend:
       #         service:
-      #           name: example-svc
+      #           name: '{{ include "argo-cd.server.fullname" . }}'
       #           port:
-    #             name: http
+      #             name: '{{ .Values.server.service.servicePortHttpName }}'
 
     # -- Additional TLS configuration for dedicated [gRPC-ingress]
     # @default -- `[]` (See [values.yaml])
     extraTls: []
       # - secretName: your-certificate-name
       #   hosts:
-    #     - argocd.example.com
+      #     - argocd.example.com
 
   # Create a OpenShift Route with SSL passthrough for UI and CLI
   # Consider setting 'hostname' e.g. https://argocd.apps-crc.testing/ using your Default Ingress Controller Domain
@@ -2284,7 +2332,7 @@ repoServer:
       #   policies:
       #   - type: Pods
       #     value: 2
-    #     periodSeconds: 60
+      #     periodSeconds: 60
     # -- Configures custom HPA metrics for the Argo CD repo server
     # Ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
     metrics: []
@@ -2341,7 +2389,30 @@ repoServer:
   # -- Additional containers to be added to the repo server pod
   ## Ref: https://argo-cd.readthedocs.io/en/stable/user-guide/config-management-plugins/
   ## Note: Supports use of custom Helm templates
-  extraContainers: []
+  extraContainers:
+    - name: avp
+      command: [ /var/run/argocd/argocd-cmp-server ]
+      image: registry.access.redhat.com/ubi8
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+      volumeMounts:
+        - mountPath: /var/run/argocd
+          name: var-files
+        - mountPath: /home/argocd/cmp-server/plugins
+          name: plugins
+        - mountPath: /tmp
+          name: tmp
+
+        # Register plugins into sidecar
+        - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+          subPath: argocd-vault-plugin.yaml
+          name: cmp-plugin
+
+        # Important: Mount tools into $PATH
+        - name: custom-tools
+          subPath: argocd-vault-plugin
+          mountPath: /usr/local/bin/argocd-vault-plugin
     # - name: cmp-my-plugin
     #   command:
     #     - "/var/run/argocd/argocd-cmp-server"
@@ -2381,16 +2452,33 @@ repoServer:
     #     # Starting with v2.4, do NOT mount the same tmp volume as the repo-server container. The filesystem separation helps
     #     # mitigate path traversal attacks.
     #     - mountPath: /tmp
-  #       name: cmp-tmp
+    #       name: cmp-tmp
 
   # -- Init containers to add to the repo server pods
-  initContainers: []
-
+  initContainers:
+    - name: download-tools
+      image: docker.io/alpine:3.8
+      command: [ sh, -c ]
+      env:
+        - name: AVP_VERSION
+          value: "1.17.0"
+      args:
+        - wget -O argocd-vault-plugin
+          https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v${AVP_VERSION}/argocd-vault-plugin_${AVP_VERSION}_linux_amd64 &&
+          chmod +x argocd-vault-plugin && mv argocd-vault-plugin /custom-tools
+      volumeMounts:
+        - mountPath: /custom-tools
+          name: custom-tools
   # -- Additional volumeMounts to the repo server main container
   volumeMounts: []
 
   # -- Additional volumes to the repo server pod
-  volumes: []
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+    - name: cmp-plugin
+      configMap:
+        name: argocd-cmp-cm
   #  - name: argocd-cmp-cm
   #    configMap:
   #      name: argocd-cmp-cm
@@ -2511,7 +2599,7 @@ repoServer:
   topologySpreadConstraints: []
     # - maxSkew: 1
     #   topologyKey: topology.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
+    #   whenUnsatisfiable: DoNotSchedule
 
   # -- Deployment strategy to be added to the repo server Deployment
   deploymentStrategy: {}
@@ -2582,7 +2670,7 @@ repoServer:
       metricRelabelings: []
       # -- Prometheus ServiceMonitor selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
 
       # -- Prometheus ServiceMonitor scheme
       scheme: ""
@@ -2678,7 +2766,7 @@ applicationSet:
   # -- Environment variables to pass to the ApplicationSet controller
   extraEnv: []
     # - name: "MY_VAR"
-  #   value: "value"
+    #   value: "value"
 
   # -- envFrom to pass to the ApplicationSet controller
   # @default -- `[]` (See [values.yaml])
@@ -2732,7 +2820,7 @@ applicationSet:
       metricRelabelings: []
       # -- Prometheus ServiceMonitor selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
 
       # -- Prometheus ServiceMonitor scheme
       scheme: ""
@@ -2786,7 +2874,7 @@ applicationSet:
     #   memory: 128Mi
     # requests:
     #   cpu: 100m
-  #   memory: 128Mi
+    #   memory: 128Mi
 
   # ApplicationSet controller container ports
   containerPorts:
@@ -2866,7 +2954,7 @@ applicationSet:
   topologySpreadConstraints: []
     # - maxSkew: 1
     #   topologyKey: topology.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
+    #   whenUnsatisfiable: DoNotSchedule
 
   # -- Deployment strategy to be added to the ApplicationSet controller Deployment
   deploymentStrategy: {}
@@ -2967,15 +3055,17 @@ applicationSet:
 
     # -- Additional ingress rules
     # @default -- `[]` (See [values.yaml])
+    ## Note: Supports use of custom Helm templates
     extraRules: []
-      # - host: example.example.com
-      #   http:
-      #       path: /
-      #       backend:
-      #         service:
-      #           name: example-svc
-      #           port:
-      #             name: http
+      # - http:
+      #    paths:
+      #    - path: /api/webhook
+      #      pathType: Prefix
+      #      backend:
+      #        service:
+      #          name: '{{ include "argo-cd.applicationSet.fullname" . }}'
+      #          port:
+      #            name: '{{ .Values.applicationSet.service.portName }}'
 
     # -- Additional ingress TLS configuration
     # @default -- `[]` (See [values.yaml])
@@ -2983,7 +3073,8 @@ applicationSet:
       # - secretName: argocd-applicationset-tls
       #   hosts:
       #     - argocd-applicationset.example.com
-
+  # -- Enable ApplicationSet in any namespace feature
+  allowAnyNamespace: false
 ## Notifications controller
 notifications:
   # -- Enable notifications controller
@@ -3047,7 +3138,7 @@ notifications:
     # - configMapRef:
     #     name: config-map-name
     # - secretRef:
-  #     name: secret-name
+    #     name: secret-name
 
   # -- Additional containers to be added to the notifications controller pod
   ## Note: Supports use of custom Helm templates
@@ -3067,7 +3158,7 @@ notifications:
   ## For more information: https://argo-cd.readthedocs.io/en/stable/operator-manual/notifications/templates/#defining-user-defined-context
   context: {}
     # region: east
-  # environmentName: staging
+    # environmentName: staging
 
   secret:
     # -- Whether helm chart creates notifications controller secret
@@ -3093,7 +3184,7 @@ notifications:
 
       # email-username:
       # email-password:
-    # For more information: https://argo-cd.readthedocs.io/en/stable/operator-manual/notifications/services/email/
+        # For more information: https://argo-cd.readthedocs.io/en/stable/operator-manual/notifications/services/email/
 
   metrics:
     # -- Enables prometheus metrics server
@@ -3116,7 +3207,7 @@ notifications:
       enabled: false
       # -- Prometheus ServiceMonitor selector
       selector: {}
-      # prometheus: kube-prometheus
+        # prometheus: kube-prometheus
       # -- Prometheus ServiceMonitor labels
       additionalLabels: {}
       # -- Prometheus ServiceMonitor annotations
@@ -3138,7 +3229,7 @@ notifications:
   ## For more information: https://argo-cd.readthedocs.io/en/stable/operator-manual/notifications/services/overview/
   notifiers: {}
     # service.slack: |
-  #   token: $slack-token
+    #   token: $slack-token
 
   # -- Annotations to be applied to the notifications controller Deployment
   deploymentAnnotations: {}
@@ -3156,7 +3247,7 @@ notifications:
     #   memory: 128Mi
     # requests:
     #   cpu: 100m
-  #   memory: 128Mi
+    #   memory: 128Mi
 
   # Notification controller container ports
   containerPorts:
@@ -3202,7 +3293,7 @@ notifications:
   topologySpreadConstraints: []
     # - maxSkew: 1
     #   topologyKey: topology.kubernetes.io/zone
-  #   whenUnsatisfiable: DoNotSchedule
+    #   whenUnsatisfiable: DoNotSchedule
 
   # -- Deployment strategy to be added to the notifications controller Deployment
   deploymentStrategy:

@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 # kube_node and kube_control_plane hosts with ram and cpu properties
-RANCHER_HOSTS = [
+KUBERNETES_HOSTS = [
   {hostname: "kube-control-plane-01", ram: 4096, cpu: 2},
   {hostname: "kube-control-plane-02", ram: 4096, cpu: 2},
   {hostname: "kube-control-plane-03", ram: 4096, cpu: 2},
@@ -25,7 +25,7 @@ docker run --name kubespray --rm  \
 SCRIPT
 
 fix_kubeconfig_permissions = <<-SCRIPT
-docker run --name kubespray --rm  \
+docker run --rm \
   -v #{ENV['PWD']}/.vagrant:#{ENV['PWD']}/.vagrant \
   quay.io/kubespray/kubespray:v2.24.1 chown -R 1000:1000 \
   #{ENV['PWD']}/.vagrant/provisioners/ansible/inventory/artifacts
@@ -50,7 +50,7 @@ end
 Vagrant.configure(2) do |config|
   # Set timezone like in host for each VM
   config.timezone.value = :host
-  RANCHER_HOSTS.each do |node|
+  KUBERNETES_HOSTS.each do |node|
     config.vm.define node[:hostname] do |config|
       config.vm.hostname = node[:hostname]
       config.vm.box = "generic-x64/ubuntu2204"
@@ -67,7 +67,7 @@ Vagrant.configure(2) do |config|
       end
 
       # Add workaround for execute provision only on last host
-      if node.equal?(RANCHER_HOSTS.last)
+      if node.equal?(KUBERNETES_HOSTS.last)
         # Execute ansible in provision phase. Workaround for automatically generate inventory by Vagrant
         config.vm.provision :ansible do |ansible|
           ansible.verbose = "v"

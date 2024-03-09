@@ -1,6 +1,7 @@
 {{- range $application := .Values.applications }}
-{{ $valueFilePath := print "values/" $application.namespace $application.name ".yaml" }}
+{{ $valueFilePath := print "values/" $application.namespace "/" $application.name ".yaml" }}
 {{ $valueFileContent := $.Files.Get $valueFilePath | nindent 8  }}
+{{ $valueFileContentLength := len $valueFileContent }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -16,14 +17,21 @@ spec:
   syncPolicy:
     automated:
       prune: true
-      selfHeal: true
+      selfHeal: false
   source:
     path: ''
     repoURL: {{ $application.repoURL }}
     targetRevision: {{ $application.targetRevision }}
     chart: {{ $application.chart }}
+    {{- /* 9 is length of $valueFileContent, when values file empty or doesn't exis */}}
+    {{- if gt $valueFileContentLength 9 }}
     helm:
       values: |
-        {{ $valueFileContent }}
+        {{- $valueFileContent }}
+    {{- end }}
+  {{- if $application.ignoreDifferences }}
+  ignoreDifferences:
+  {{- $application.ignoreDifferences | toYaml | nindent 4 }}
+  {{- end }}
 ---
 {{- end }}

@@ -5,27 +5,31 @@ applications:
   - name: argocd
     namespace: argocd
     chart: argo-cd
-    targetRevision: 3.33.6
+    targetRevision: 6.6.0
     repoURL: https://argoproj.github.io/argo-helm
   - name: cert-manager
     namespace: cert-manager
     chart: cert-manager
     targetRevision: v1.14.2
     repoURL: https://charts.jetstack.io
-  - name: tomcat
-    namespace: infra
-    chart: tomcat
-    targetRevision: 10.3.9
-    repoURL: https://charts.bitnami.com/bitnami
   - name: istiod
     namespace: istio-system
     chart: istiod
     targetRevision: 1.20.3
-  - name: gateway
+    repoURL: https://istio-release.storage.googleapis.com/charts
+  - name: istio-ingressgateway
     namespace: istio-system
     chart: gateway
     targetRevision: 1.20.3
-  - name: base
+    repoURL: https://istio-release.storage.googleapis.com/charts
+  - name: istio-base
     namespace: istio-system
     chart: base
     targetRevision: 1.20.3
+    repoURL: https://istio-release.storage.googleapis.com/charts
+    ignoreDifferences:
+      - group: admissionregistration.k8s.io
+        kind: ValidatingWebhookConfiguration
+        name: istiod-default-validator
+        jsonPointers:
+          - /webhooks/0/failurePolicy
