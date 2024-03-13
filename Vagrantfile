@@ -18,6 +18,7 @@ control_plane_hosts = []
 run_kubespray = <<-SCRIPT
 docker run --name kubespray --rm  \
   -v #{ENV['PWD']}/.vagrant:#{ENV['PWD']}/.vagrant \
+  -e ANSIBLE_FORCE_COLOR=true \
   -v ./inventory/group_vars:/kubespray/playbooks/group_vars \
   quay.io/kubespray/kubespray:v2.24.1 ansible-playbook \
   -i #{ENV['PWD']}/.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory \
@@ -84,7 +85,7 @@ Vagrant.configure(2) do |config|
         # trigger will be execute, when ansible provision has done
         config.trigger.after [:provisioner_run], type: :hook do |kubespray|
           kubespray.info = "Execute kubespray in docker"
-          kubespray.run = {inline: "#{run_kubespray}"}
+          kubespray.run = {inline: "#{run_kubespray}", keep_color: true}
           kubespray.ignore = [:destroy, :halt]
         end
 
