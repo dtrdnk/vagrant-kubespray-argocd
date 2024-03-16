@@ -1,0 +1,29 @@
+---
+# Source: infra/templates/application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: my-app-ns
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+  source:
+    path: ''
+    repoURL: https://exmplae.com
+    targetRevision: 7.7.7
+    chart: my-app-chart
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      jsonPointers:
+      - /webhooks/0/failurePolicy
+      kind: ValidatingWebhookConfiguration
+      name: istiod-default-validator

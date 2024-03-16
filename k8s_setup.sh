@@ -55,19 +55,10 @@ function upgrade_install_argocd() {
     --version 6.6.0 || { echo "Failure of argocd installation. Aborting."; exit 1; }
 }
 
-function apply_k8s_manifests() {
-  kubectl --kubeconfig "${kubeconfig}" \
-    apply -f infra/templates/selfsigned-issuer.yaml;
-  kubectl --kubeconfig "${kubeconfig}" \
-    apply -f infra/templates/home.lab.yaml;
-  kubectl --kubeconfig "${kubeconfig}" \
-    apply -f infra/templates/gateway.yaml;
-  kubectl --kubeconfig "${kubeconfig}" \
-    apply -f infra/templates/argocd-vs.yaml; \
-  kubectl --kubeconfig "${kubeconfig}" \
-      apply -f infra/templates/IPAddressPool.yaml; \
-  kubectl --kubeconfig "${kubeconfig}" \
-      apply -f infra/templates/L2Advertisement.yaml;
+function apply_extra_manifests() {
+  echo "Apply extra manifests. Please wait...";
+  helm template --show-only templates/extra-manifests.yaml extras ./infra \
+  -f infra/home-lab-values.yaml | kubectl --kubeconfig "${kubeconfig}" apply -f -
 }
 
 function main() {
@@ -77,7 +68,7 @@ function main() {
     upgrade_install_cert_manager
     upgrade_install_istio
     upgrade_install_argocd
-    apply_k8s_manifests
+    apply_extra_manifests
 }
 
 main

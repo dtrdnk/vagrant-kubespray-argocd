@@ -615,7 +615,7 @@ extraObjects:
       source:
         helm:
           valueFiles:
-            - values.yaml
+            - home-lab-values.yaml
         path: apps
         repoURL: https://github.com/dtrdnk/vagrant-kubespray-argocd.git
         targetRevision: master
@@ -638,7 +638,7 @@ extraObjects:
       source:
         helm:
           valueFiles:
-            - values.yaml
+            - home-lab-values.yaml
         path: infra
         repoURL: https://github.com/dtrdnk/vagrant-kubespray-argocd.git
         targetRevision: master

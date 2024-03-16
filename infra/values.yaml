@@ -1,35 +1,14 @@
 ---
-namespaces: ['argocd', 'infra', 'monitoring', 'cert-manager']
+# List of namespace for infra apps, which will be created by ArgoCD
+namespaces: [ ]
 
-applications:
-  - name: argocd
-    namespace: argocd
-    chart: argo-cd
-    targetRevision: 6.6.0
-    repoURL: https://argoproj.github.io/argo-helm
-  - name: cert-manager
-    namespace: cert-manager
-    chart: cert-manager
-    targetRevision: v1.14.3
-    repoURL: https://charts.jetstack.io
-  - name: istiod
-    namespace: istio-system
-    chart: istiod
-    targetRevision: 1.20.3
-    repoURL: https://istio-release.storage.googleapis.com/charts
-  - name: istio-ingressgateway
-    namespace: istio-system
-    chart: gateway
-    targetRevision: 1.20.3
-    repoURL: https://istio-release.storage.googleapis.com/charts
-  - name: istio-base
-    namespace: istio-system
-    chart: base
-    targetRevision: 1.20.3
-    repoURL: https://istio-release.storage.googleapis.com/charts
-    ignoreDifferences:
-      - group: admissionregistration.k8s.io
-        kind: ValidatingWebhookConfiguration
-        name: istiod-default-validator
-        jsonPointers:
-          - /webhooks/0/failurePolicy
+# List of Applications, which will be created by ArgoCD
+applications: [ ]
+#  - name: argocd
+#    namespace: argocd
+#    chart: argo-cd
+#    targetRevision: 6.6.0
+#    repoURL: https://argoproj.github.io/argo-helm
+
+# Array of additional manifests
+extraManifests: [ ]
