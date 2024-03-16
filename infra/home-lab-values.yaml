@@ -7,6 +7,11 @@ applications:
     chart: argo-cd
     targetRevision: 6.6.0
     repoURL: https://argoproj.github.io/argo-helm
+  - name: metallb
+    namespace: metallb-system
+    chart: metallb
+    targetRevision: 0.14.3
+    repoURL: https://metallb.github.io/metallb
   - name: cert-manager
     namespace: cert-manager
     chart: cert-manager

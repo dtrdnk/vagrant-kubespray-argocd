@@ -1,4 +1,5 @@
 ---
+# VM's which deployed by generic-x64/ubuntu2204 has preset 12h time format. This playbook set 24h format
 - name: Set LC_TIME
   hosts: all
   become: yes
