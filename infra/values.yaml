@@ -2,6 +2,9 @@
 # List of namespace for infra apps, which will be created by ArgoCD
 namespaces: [ ]
 
+# Name of project for all apps from this chart
+#applicationsProject: main
+
 # List of Applications, which will be created by ArgoCD
 applications: [ ]
 #  - name: argocd
@@ -9,6 +12,14 @@ applications: [ ]
 #    chart: argo-cd
 #    targetRevision: 6.6.0
 #    repoURL: https://argoproj.github.io/argo-helm
+#  - name: temporal
+#    namespace: infra
+#    chart: temporal
+#    targetRevision: 0.35.0
+#    repoURL: https://dtrdnk.github.io/helm-charts
+#    # set Vault placeholders with an inline values file, which will be rendered via argocd-vault-plugin
+#    # Ref. https://argocd-vault-plugin.readthedocs.io/en/stable/usage/#with-an-inline-values-file
+#    helmInlineAVPValue: true
 
 # Array of additional manifests
 extraManifests: [ ]

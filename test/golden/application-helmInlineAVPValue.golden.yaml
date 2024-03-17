@@ -1,0 +1,29 @@
+---
+# Source: infra/templates/application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+  source:
+    path: ''
+    repoURL: https://charts.jetstack.io
+    targetRevision: v1.14.3
+    chart: cert-manager
+    plugin:
+      name: argocd-vault-plugin-helm
+      env:
+        - name: HELM_VALUES
+          value: |    
+            installCRDs: true

@@ -1,7 +1,8 @@
+{{- $applicationsProject := .Values.applicationsProject }}
 {{- range $application := .Values.applications }}
-{{ $valueFilePath := print "values/" $application.namespace "/" $application.name ".yaml" }}
-{{ $valueFileContent := $.Files.Get $valueFilePath | nindent 8  }}
-{{ $valueFileContentLength := len $valueFileContent }}
+{{- $valueFilePath := print "values/" $application.namespace "/" $application.name ".yaml" }}
+{{- $valueFileContent := $.Files.Get $valueFilePath | nindent 8  }}
+{{- $valueFileContentLength := len $valueFileContent }}
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -13,7 +14,7 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: {{ $application.namespace }}
-  project: {{ $application.project | default "default" }}
+  project: {{ $applicationsProject | default "default" }}
   syncPolicy:
     automated:
       prune: true
@@ -24,10 +25,18 @@ spec:
     targetRevision: {{ $application.targetRevision }}
     chart: {{ $application.chart }}
     {{- /* 9 is length of $valueFileContent, when values file empty or doesn't exis */}}
-    {{- if gt $valueFileContentLength 9 }}
+    {{- if and (gt $valueFileContentLength 9) (not $application.helmInlineAVPValue) }}
     helm:
       values: |
         {{- $valueFileContent }}
+    {{- end }}
+    {{- if and (gt $valueFileContentLength 9) ($application.helmInlineAVPValue) }}
+    plugin:
+      name: argocd-vault-plugin-helm
+      env:
+        - name: HELM_VALUES
+          value: |
+            {{- $valueFileContent | indent 4 }}
     {{- end }}
   {{- if $application.ignoreDifferences }}
   ignoreDifferences:
