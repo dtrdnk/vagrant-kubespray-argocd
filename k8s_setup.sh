@@ -1,14 +1,27 @@
 #!/usr/bin/env bash
 
+# For using this script, you must pass arg with counter name.
+# Example: ./k8s_setup.sh home-lab
+
 kubeconfig="./.vagrant/provisioners/ansible/inventory/artifacts/admin.conf"
+shell_arg=$1
+
+function check_is_args_passed() {
+  if [[ $# -ne 1 ]]; then
+      echo "Fatal! There is no arg passed args. Exit." >&2
+      exit 2
+  fi
+}
 
 # This function calling with one arg, which contain application name
 function get_application_version() {
+  local application_name
   local version
-  version=$(yq eval ".applications.[] | select(.name == \"$1\") .targetRevision" infra/home-lab-values.yaml)
+  application_name=$1
+  version=$(yq eval ".applications.[] | select(.name == \"$application_name\") .targetRevision" "./infra/${shell_arg}-values.yaml")
 
   if [[ "${version}" == "" ]]; then
-    echo "Fatal! There is no version for $1 application in infra/home-lab-values.yaml. Exit." >&2
+    echo "Fatal! There is no version for $application_name application in infra/${shell_arg}-values.yaml. Exit." >&2
     exit 1
   else
     echo "${version}"
@@ -27,10 +40,10 @@ function check_is_cli_tools_installed() {
   done
 }
 
-# home-lab-values.yaml is single source of truth for helm installation. The file must be exist.
+# <shell_arg>-values.yaml is single source of truth for helm installation. The file must be exist.
 function check_is_values_file_exist() {
-  if ! [[ -f "./infra/home-lab-values.yaml" ]]; then
-    echo "Fatal! There is no values file home-lab-values.yaml in ${PWD}/infra. Exit." >&2
+  if ! [[ -f "./infra/${shell_arg}-values.yaml" ]]; then
+    echo "Fatal! There is no values file in ${PWD}/infra. Exit." >&2
     exit 1
   fi
 }
@@ -113,10 +126,11 @@ function upgrade_install_argocd() {
 function apply_extra_manifests() {
   echo "Apply extra manifests. Please wait..."
   helm template --show-only templates/extra-manifests.yaml extras ./infra \
-    -f infra/home-lab-values.yaml | kubectl --kubeconfig "${kubeconfig}" apply -f -
+    -f "./infra/${shell_arg}-values.yaml" | kubectl --kubeconfig "${kubeconfig}" apply -f -
 }
 
 function main() {
+  check_is_args_passed $shell_arg
   check_is_cli_tools_installed
   check_is_values_file_exist
   check_is_kubeconfig_exist

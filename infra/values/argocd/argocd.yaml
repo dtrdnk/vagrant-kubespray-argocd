@@ -2412,46 +2412,47 @@ repoServer:
         - name: custom-tools
           subPath: argocd-vault-plugin
           mountPath: /usr/local/bin/argocd-vault-plugin
-    # argocd-vault-plugin with inline values file
-    - name: avp-helm
-      command: [/var/run/argocd/argocd-cmp-server]
-      image: quay.io/argoproj/argocd:v2.10.2
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 999
-      volumeMounts:
-        - mountPath: /var/run/argocd
-          name: var-files
-        - mountPath: /home/argocd/cmp-server/plugins
-          name: plugins
-        - mountPath: /tmp
-          name: tmp
-        - mountPath: /home/argocd/cmp-server/config/plugin.yaml
-          subPath: argocd-vault-plugin-helm.yaml
-          name: cmp-plugin
-        - name: custom-tools
-          subPath: argocd-vault-plugin
-          mountPath: /usr/local/bin/argocd-vault-plugin
-    # argocd-vault-plugin with additional Helm arguments
-    - name: avp-helm-args
-      command: [/var/run/argocd/argocd-cmp-server]
-      image: quay.io/argoproj/argocd:v2.10.2
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 999
-      volumeMounts:
-        - mountPath: /var/run/argocd
-          name: var-files
-        - mountPath: /home/argocd/cmp-server/plugins
-          name: plugins
-        - mountPath: /tmp
-          name: tmp
-        - mountPath: /home/argocd/cmp-server/config/plugin.yaml
-          subPath: argocd-vault-plugin-helm-args.yaml
-          name: cmp-plugin
-        - name: custom-tools
-          subPath: argocd-vault-plugin
-          mountPath: /usr/local/bin/argocd-vault-plugin
+    ## argocd-vault-plugin with inline values file
+    #- name: avp-helm
+    #  command: [/var/run/argocd/argocd-cmp-server]
+    #  image: quay.io/argoproj/argocd:v2.10.2
+    #  securityContext:
+    #    runAsNonRoot: true
+    #    runAsUser: 999
+    #  volumeMounts:
+    #    - mountPath: /var/run/argocd
+    #      name: var-files
+    #    - mountPath: /home/argocd/cmp-server/plugins
+    #      name: plugins
+    #    - mountPath: /tmp
+    #      name: tmp
+    #    - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+    #      subPath: argocd-vault-plugin-helm.yaml
+    #      name: cmp-plugin
+    #    - name: custom-tools
+    #      subPath: argocd-vault-plugin
+    #      mountPath: /usr/local/bin/argocd-vault-plugin
+    ## argocd-vault-plugin with additional Helm arguments
+    #- name: avp-helm-args
+    #  command: [/var/run/argocd/argocd-cmp-server]
+    #  image: quay.io/argoproj/argocd:v2.10.2
+    #  securityContext:
+    #    runAsNonRoot: true
+    #    runAsUser: 999
+    #  volumeMounts:
+    #    - mountPath: /var/run/argocd
+    #      name: var-files
+    #    - mountPath: /home/argocd/cmp-server/plugins
+    #      name: plugins
+    #    - mountPath: /tmp
+    #      name: tmp
+    #    - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+    #      subPath: argocd-vault-plugin-helm-args.yaml
+    #      name: cmp-plugin
+    #    - name: custom-tools
+    #      subPath: argocd-vault-plugin
+    #      mountPath: /usr/local/bin/argocd-vault-plugin
+    #
     # - name: cmp-my-plugin
     #   command:
     #     - "/var/run/argocd/argocd-cmp-server"

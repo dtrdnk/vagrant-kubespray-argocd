@@ -97,7 +97,7 @@ Vagrant.configure(2) do |config|
 
         config.trigger.after [:provisioner_run], type: :hook do |fix_permissions|
           fix_permissions.info = "Run k8s_setup.sh"
-          fix_permissions.run = {path: "k8s_setup.sh"}
+          fix_permissions.run = {path: "k8s_setup.sh", args: "home-lab"}
           fix_permissions.ignore = [:destroy, :halt]
         end
       end # end provision on last node
