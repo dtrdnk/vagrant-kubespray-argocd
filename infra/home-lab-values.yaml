@@ -1,4 +1,5 @@
 ---
+contour: home-lab
 namespaces: ['argocd', 'infra', 'monitoring', 'cert-manager']
 
 applications:

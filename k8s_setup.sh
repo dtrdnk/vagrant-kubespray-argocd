@@ -78,7 +78,7 @@ function upgrade_install_cert_manager() {
   echo "Installing cert-manager. Please wait..."
   helm --kubeconfig "${kubeconfig}" \
     upgrade --install cert-manager --create-namespace \
-    jetstack/cert-manager -f ./infra/values/cert-manager/cert-manager.yaml \
+    jetstack/cert-manager -f "./infra/values/${shell_arg}/cert-manager/cert-manager.yaml" \
     --namespace cert-manager --version "$(get_application_version 'cert-manager')" ||
     {
       echo "Failure of argocd installation. Aborting."
@@ -115,7 +115,7 @@ function upgrade_install_argocd() {
   helm --kubeconfig "${kubeconfig}" upgrade \
     --install argocd argo/argo-cd --wait \
     --create-namespace -n argocd \
-    -f ./infra/values/argocd/argocd.yaml \
+    -f "./infra/values/${shell_arg}/argocd/argocd.yaml" \
     --version "$(get_application_version 'argocd')" || {
     echo "Failure of argocd installation. Aborting."
     exit 1

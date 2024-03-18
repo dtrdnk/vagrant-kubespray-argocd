@@ -3,14 +3,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: test-bitnami-nginx
+  name: cert-manager
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
     server: https://kubernetes.default.svc
-    namespace: test-bitnami-nginx
+    namespace: cert-manager
   project: default
   syncPolicy:
     automated:
@@ -18,6 +18,9 @@ spec:
       selfHeal: false
   source:
     path: ''
-    repoURL: https://charts.bitnami.com/bitnami
-    targetRevision: 15.14.0
-    chart: nginx
+    repoURL: https://charts.jetstack.io
+    targetRevision: v1.14.3
+    chart: cert-manager
+    helm:
+      values: |
+        installCRDs: true

@@ -1,4 +1,7 @@
 ---
+# Contour name for values files dir path
+contour: home-lab
+
 # List of namespace for infra apps, which will be created by ArgoCD
 namespaces: [ ]
 

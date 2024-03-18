@@ -1,6 +1,7 @@
+{{- $contour := .Values.contour }}
 {{- $applicationsProject := .Values.applicationsProject }}
 {{- range $application := .Values.applications }}
-{{- $valueFilePath := print "values/" $application.namespace "/" $application.name ".yaml" }}
+{{- $valueFilePath := print "values/" $contour "/" $application.namespace "/" $application.name ".yaml" }}
 {{- $valueFileContent := $.Files.Get $valueFilePath | nindent 8  }}
 {{- $valueFileContentLength := len $valueFileContent }}
 apiVersion: argoproj.io/v1alpha1
