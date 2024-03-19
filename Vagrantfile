@@ -3,17 +3,18 @@
 
 # kube_node and kube_control_plane hosts with ram and cpu properties
 KUBERNETES_HOSTS = [
-  {hostname: "kube-control-plane-01", ram: 4096, cpu: 2},
-  {hostname: "kube-control-plane-02", ram: 4096, cpu: 2},
-  {hostname: "kube-control-plane-03", ram: 4096, cpu: 2},
-  {hostname: "kube-node-01",          ram: 4096, cpu: 2},
-  {hostname: "kube-node-02",          ram: 4096, cpu: 2},
-  {hostname: "kube-node-03",          ram: 4096, cpu: 2}
+  {hostname: "kube-control-plane-01", ram: 4096, cpu: 2, ip: "10.20.30.41"},
+  {hostname: "kube-control-plane-02", ram: 4096, cpu: 2, ip: "10.20.30.42"},
+  {hostname: "kube-control-plane-03", ram: 4096, cpu: 2, ip: "10.20.30.43"},
+  {hostname: "kube-node-01",          ram: 4096, cpu: 2, ip: "10.20.30.44"},
+  {hostname: "kube-node-02",          ram: 4096, cpu: 2, ip: "10.20.30.45"},
+  {hostname: "kube-node-03",          ram: 4096, cpu: 2, ip: "10.20.30.46"}
 ]
 
 # Keep empty. This lists for ansible inventory hosts splitting by their names
+kube_control_plane_hosts = []
 kube_node_hosts = []
-control_plane_hosts = []
+host_vars = {}
 
 run_kubespray = <<-SCRIPT
 docker run --name kubespray --rm  \
@@ -31,7 +32,6 @@ docker run --rm \
   quay.io/kubespray/kubespray:v2.24.1 chown -R 1000:1000 \
   #{ENV['PWD']}/.vagrant/provisioners/ansible/inventory/artifacts
 SCRIPT
-
 
 # Libvirt plugin references:
 # https://www.rubydoc.info/gems/vagrant-libvirt/0.12.2 or https://github.com/vagrant-libvirt/vagrant-libvirt
@@ -55,16 +55,23 @@ Vagrant.configure(2) do |config|
     config.vm.define node[:hostname] do |config|
       config.vm.hostname = node[:hostname]
       config.vm.box = "generic-x64/ubuntu2204"
+      config.vm.network :private_network,
+        :ip => node[:ip]
       config.vm.provider :libvirt do |domain|
         domain.memory = node[:ram]
         domain.cpus = node[:cpu]
       end
 
+      # Filling host_vars hashmap for ansible. This hashmap necessary for customize VM interface for running k8s service
+      host_vars[node[:hostname]] = {
+        "ip": node[:ip]
+      }
+
       # Filling kube_node_hosts and control_plane_hosts lists for ansible inventory generator
       if node[:hostname].start_with?("kube-node")
         kube_node_hosts << node[:hostname]
       elsif node[:hostname].start_with?("kube-control")
-        control_plane_hosts << node[:hostname]
+        kube_control_plane_hosts << node[:hostname]
       end
 
       # Add workaround for execute provision only on last host
@@ -75,9 +82,10 @@ Vagrant.configure(2) do |config|
           ansible.compatibility_mode = "2.0"
           ansible.playbook = "playbook.yaml"
           ansible.host_key_checking = false
+          ansible.host_vars = host_vars
           ansible.groups = {
-            "kube_control_plane" => control_plane_hosts,
-            "etcd" => control_plane_hosts,
+            "kube_control_plane" => kube_control_plane_hosts,
+            "etcd" => kube_control_plane_hosts,
             "kube_node" => kube_node_hosts,
             "k8s_cluster:children" => ["kube_control_plane", "kube_node"]
           }

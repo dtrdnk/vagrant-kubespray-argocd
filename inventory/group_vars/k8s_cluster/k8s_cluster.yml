@@ -6,10 +6,10 @@ kube_proxy_strict_arp: true
 kube_vip_enabled: true
 kube_vip_arp_enabled: true
 kube_vip_controlplane_enabled: true
-kube_vip_address: 192.168.121.100
+kube_vip_address: 10.20.30.40
 loadbalancer_apiserver:
   address: "{{ kube_vip_address }}"
   port: 6443
-kube_vip_services_enabled: true
+kube_vip_interface: enp0s6 # by default selected interface with default gw. This option necessary, if you have 2 or more interfaces on VM
 kube_vip_enableServicesElection: true
 kubeconfig_localhost: true
