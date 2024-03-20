@@ -61,7 +61,7 @@ function add_and_update_helm_repos() {
   helm --kubeconfig "${kubeconfig}" repo add jetstack https://charts.jetstack.io
   helm --kubeconfig "${kubeconfig}" repo add istio https://istio-release.storage.googleapis.com/charts
   helm --kubeconfig "${kubeconfig}" repo add metallb https://metallb.github.io/metallb
-  helm --kubeconfig "${kubeconfig}" repo update argo jetstack istio
+  helm --kubeconfig "${kubeconfig}" repo update argo jetstack istio metallb
 }
 
 # Metallb app allow you using service aka loadBalancer with ip in the same network in L2 mode
