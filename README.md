@@ -12,22 +12,20 @@ For your Home Lab env, you can use this repository with scripts for:
 
 Vagrant will create 6 VMs:
 
-- kube-control-plane-0[1-3]: controller node (2 vcpu, 4GB RAM each)
-- kube-node-0[1-3]: 1 k8s master and 2 worker nodes (2 vcpu and 4GB RAM each)
+- kube-control-plane-0[1-3]: 3 controller-plane nodes (2 vcpu, 4GB RAM each)
+- kube-node-0[1-3]: 3 worker nodes (2 vcpu and 4GB RAM each)
 
 This repository was tested using
 
 ![Test Env](docs/images/tested.png)
 
-## Quick Start
+## Architecture
 
 ![Lab Environment](docs/images/lab.png)
 
-Check the variables defined on the `.env` file.
+## Quick Start
 
-**NOTE:** The bootstrap will create RSA-key by default
-
-To create the k8s cluster just run:
+Just run:
 
 ```bash
 vagrant up
@@ -51,6 +49,7 @@ kubectl cluster-info
 - The Vagrantfile required Vagrant plugins:
     - vagrant-libvirt
     - vagrant-timezone
+- Inspired by https://github.com/bcochofel/vagrant-kubespray
 
 ## pre-commit hooks
 
