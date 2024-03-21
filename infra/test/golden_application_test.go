@@ -1,12 +1,11 @@
 package test
 
 import (
-	"path/filepath"
-	"testing"
-	"vagrant-kubespray-argocd/test/utils"
-
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"path/filepath"
+	"testing"
+	"vagrant-kubespray-argocd/infra/test/utils"
 )
 
 func TestAdvancedApplicationTemplate(t *testing.T) {
